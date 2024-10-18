@@ -1,62 +1,58 @@
-const { app, BrowserWindow, autoUpdater, dialog } = require('electron');
+const { app, BrowserWindow, dialog } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
-const log = require('electron-log');
 
 let mainWindow;
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  });
+    mainWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
 
-  mainWindow.loadFile('index.html');
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+    mainWindow.loadURL('data:text/html,<h1>Auto Update App</h1><p>Version: ' + app.getVersion() + '</p>');
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
 }
 
-app.on('ready', () => {
-  createWindow();
-  checkForUpdates();
+app.whenReady().then(() => {
+    createWindow();
+    autoUpdater.checkForUpdatesAndNotify();
 });
 
-function checkForUpdates() {
-  const server = 'https://update.electronjs.org';
-  const feedURL = `${server}/TikNersi/electron-auto-update/${process.platform}-${process.arch}/${app.getVersion()}`;
-
-  autoUpdater.setFeedURL({ url: feedURL });
-
-  autoUpdater.on('update-available', () => {
-    log.info('Update available');
+autoUpdater.on('update-available', () => {
     dialog.showMessageBox({
-      type: 'info',
-      title: 'Update Available',
-      message: 'A new update is available. Downloading now...'
+        type: 'info',
+        title: 'Update Available',
+        message: 'A new version is available. Downloading now...'
     });
-  });
+});
 
-  autoUpdater.on('update-downloaded', () => {
-    log.info('Update downloaded');
-    dialog
-      .showMessageBox({
+autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox({
         type: 'info',
         title: 'Update Ready',
-        message: 'A new update is ready. Restart the application to apply the updates?',
+        message: 'A new version is ready. Restart now to apply the update?',
         buttons: ['Restart', 'Later']
-      })
-      .then(result => {
+    }).then(result => {
         if (result.response === 0) autoUpdater.quitAndInstall();
-      });
-  });
+    });
+});
 
-  autoUpdater.on('error', (error) => {
-    log.error(`Update error: ${error.message}`);
-  });
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
 
-  autoUpdater.checkForUpdates();
-}
+app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+    }
+});
