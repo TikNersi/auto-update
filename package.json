@@ -1,0 +1,32 @@
+{
+  "name": "electron-auto-update-app",
+  "version": "1.0.0",
+  "description": "A test Electron app with auto-update feature",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.yourcompany.auto-update-app",
+    "productName": "AutoUpdateApp",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "TikNersi",
+        "repo": "auto-update"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    }
+  },
+  "dependencies": {
+    "electron": "^33.0.1",
+    "electron-builder": "^25.1.8",
+    "electron-updater": "^6.3.9"
+  }
+}
