@@ -1,11 +1,12 @@
 {
   "name": "electron-auto-update-app",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A test Electron app with auto-update feature",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder --publish always",
+    "built": "electron-builder --win"
   },
   "build": {
     "appId": "com.yourcompany.auto-update-app",
@@ -18,18 +19,24 @@
       }
     ],
     "win": {
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": "x64"
+        }
+      ]
     },
     "mac": {
       "target": "dmg"
     }
   },
   "dependencies": {
-    "electron": "^33.0.1",
-    "electron-builder": "^25.1.8",
     "electron-updater": "^6.3.9"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "electron": "^33.0.1",
+    "electron-builder": "^25.1.8"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC"
