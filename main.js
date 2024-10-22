@@ -3,7 +3,7 @@ const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
 let mainWindow;
-let updateInterval;
+let updateAvailable = false; // Track if an update is available
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -26,70 +26,77 @@ function createWindow() {
 }
 
 function checkForUpdates() {
-    autoUpdater.checkForUpdates();
+    autoUpdater.checkForUpdatesAndNotify();
 }
 
-app.whenReady().then(() => {
-    autoUpdater.checkForUpdatesAndNotify();
-});
+// Check for updates and handle the logic
+const handleUpdates = () => {
+        checkForUpdates();
 
-autoUpdater.on('update-available', () => {
-    // During initial startup, if an update is found, download and install it automatically
-    if (!mainWindow) {
-        autoUpdater.on('update-downloaded', () => {
-            autoUpdater.quitAndInstall();
-        });
-    } else {
+    autoUpdater.on('update-available', () => {
+        updateAvailable = true; // Set the flag for update availability
         dialog.showMessageBox({
             type: 'info',
-            title: 'Update Available',
-            message: 'A new version is available. Downloading now...',
-        });
-    }
-});
+            title: 'Update Ready',
+            message: "Update available. Downloading now..."
+        })
+        console.log('Update available. Downloading now...');
+    });
 
-autoUpdater.on('update-downloaded', () => {
-    if (mainWindow) {
-        // During runtime, if an update is downloaded, prompt the user to restart or install later
-        dialog
-            .showMessageBox({
+    autoUpdater.on('download-progress', (progressObj) => {
+        const log_message = `Download speed: ${progressObj.bytesPerSecond} - ` +
+            `Downloaded ${progressObj.percent}% - ` +
+            `(${progressObj.transferred}/${progressObj.total})`;
+        console.log(log_message); // Log download progress
+    });
+
+    autoUpdater.on('update-downloaded', () => {
+        if (mainWindow) {
+            // If the window is open and an update is downloaded
+            dialog.showMessageBox({
                 type: 'info',
                 title: 'Update Ready',
                 message: 'A new version is ready. Restart now to apply the update?',
                 buttons: ['Restart', 'Later'],
-            })
-            .then((result) => {
-                if (result.response === 0) autoUpdater.quitAndInstall();
+            }).then((result) => {
+                if (result.response === 0) {
+                    autoUpdater.quitAndInstall();
+                }
             });
-    } else {
-        // If no window exists (initial startup), install the update automatically
-        autoUpdater.quitAndInstall();
-    }
-});
+        } else if (updateAvailable) {
+            autoUpdater.quitAndInstall(); 
+        }
+    });
 
-autoUpdater.on('error', (error) => {
-    console.error('Error during update process:', error);
-    if (!mainWindow) {
-        createWindow();
-    }
-});
+    autoUpdater.on('error', (error) => {
+        console.error('Error during update process:', error);
+    });
+};
 
+// Initial check for updates before creating the window
 app.whenReady().then(() => {
-    autoUpdater.checkForUpdatesAndNotify();
-    createWindow();
+    handleUpdates(); 
+    
+}).then(() => createWindow());
 
-    // Check for updates every minute while the app is running
-    updateInterval = setInterval(checkForUpdates, 30 * 1000);
+// Automatically check for updates on subsequent launches
+app.on('ready', () => {
+    app.on('window-all-closed', () => {
+        if (process.platform !== 'darwin') {
+            app.quit();
+        }
+    });
+
+    app.on('activate', () => {
+        if (BrowserWindow.getAllWindows().length === 0) {
+            createWindow();
+        }
+    });
 });
 
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
+// Check for updates every minute while the app is running
+setInterval(() => {
+    if (mainWindow) {
+        autoUpdater.checkForUpdates();
     }
-});
-
-app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-    }
-});
+}, 30 * 1000); // Adjust the interval as needed

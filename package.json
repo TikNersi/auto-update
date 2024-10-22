@@ -1,6 +1,6 @@
 {
   "name": "electron-auto-update-app",
-  "version": "1.0.2",
+  "version": "1.0.1",
   "description": "A test Electron app with auto-update feature",
   "main": "main.js",
   "scripts": {
@@ -31,6 +31,7 @@
     }
   },
   "dependencies": {
+    "electron-log": "^5.2.0",
     "electron-updater": "^6.3.9"
   },
   "devDependencies": {
